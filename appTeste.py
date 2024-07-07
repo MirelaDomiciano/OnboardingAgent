@@ -5,10 +5,12 @@ import os
 from agent import Agent
 
 # Configuração da página
-st.set_page_config(page_title="Tech4Humans Onboarding Assistent", layout="centered")
+st.set_page_config(page_title="Tech4Humans Onboarding Assistant", layout="centered")
 
-# Inicializa o agente
-agent = Agent()
+# Armazena a instância do agente na sessão do Streamlit
+if "agent" not in st.session_state:
+    st.session_state.agent = Agent()
+    print("Agent initialized")
 
 # Armazena as mensagens geradas pelo agente
 if "messages" not in st.session_state:
@@ -22,12 +24,11 @@ for message in st.session_state.messages:
 def clear_chat_history():
     st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
 
-
 # Função para gerar a resposta do agente
 def generate_agent_response(prompt_input):
-    # Aqui você deve implementar a lógica para chamar seu agente e obter a resposta
-    response = agent.execute_agent(prompt_input)
-    return response['output']
+    # Chama o agente armazenado na sessão
+    response = st.session_state.agent.execute_agent(prompt_input)
+    return response
 
 # Entrada fornecida pelo usuário
 if prompt := st.chat_input(placeholder="Type a message..."):

@@ -14,14 +14,13 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.prompts import PromptTemplate
 from calendarEvents import create_event_tool
 
-
 load_dotenv()
 
 class Agent:
     def __init__(self):
-        self.llm = ChatGroq(model="llama3-70b-8192")
+        self.llm = ChatGroq(model="llama3-70b-8192", temperature=0.5)
         self.search = GoogleSearchAPIWrapper()
-        self.chat_history = []
+        self.chat_history = {"conversations": []}
 
         self.tool_search = Tool(
             name="google_search",
@@ -33,7 +32,7 @@ class Agent:
         
         self.tool_rag = Tool(
             name="rag_tool",
-            description="""Retrieve e generate informação do documento pdf com as informações da empresa Tech4Humans. Caso o assunto seja abordado no pdf, monte uma resposta final unindo as informações disponíveis, se a informação não for encontrada, responda com uma resposta padrão.
+            description="""Retrieve e generate informação do documento pdf com as informações da empresa Tech4Humans e também do TechLab Agentes. Caso o assunto seja abordado no pdf, monte uma resposta final unindo as informações disponíveis, se a informação não for encontrada, responda com uma resposta padrão.
             Lembre-se de consultar o histórico de conversas para entender se a pergunata e considerar se está é a ferramente""",
             func=self.rag_tool,
         )
@@ -68,7 +67,6 @@ class Agent:
             Você deve usar as ferramentas no seguinte formato e somente uma ferramenta por input:
             ```
             Tool: search_tool
-                Histórico de conversa:{chat_history}
                 Question:{input}
                 Thought: Tem algo útil no histórico da conversa? Se sim use para pensar sobre qual das ferramentas você deve usar para responder a pergunta, se não ignore e pense qual ferramenta é mais coerente com a pergunta.
                 Action: a ação a ser tomada, deve ser uma das [{tool_names}]. Pesquisar na web somente as ferramentas citadas na search_tool, caso não esteja responda que não pode auxiliar. Quando necessário marcar um evento ou reunião chamar função tool_calendar. Os demais assuntos devem ser verificados no documento pdf, como círculos da empresa, programas internos. Sempre envie informações completas. 
@@ -79,6 +77,9 @@ class Agent:
             ---
             Begin
             Use o histŕico para te ajudar a responder as perguntas.
+            
+            Histórico de conversa:
+            {chat_history}
 
             New input: {input}
             {agent_scratchpad}"""
@@ -113,12 +114,29 @@ class Agent:
 
     def execute_agent(self, query):
         try:
-            result = self.agent_executor.invoke({"input": query, "chat_history": self.chat_history, "agent_scratchpad": ""})
-            self.update_chat_history(query, result)
-            return result
-        except Exception as e:
-            return f"An error occurred: {e}"
+            # Store the user input in chat_history before getting the response
+            self.update_chat_history("User", query)
+            self.query = query
 
-    def update_chat_history(self, user_input, agent_response):
-        self.chat_history.append(f"User: {user_input}")
-        self.chat_history.append(f"Agent: {agent_response}")
+            # Get the agent's response
+            result = self.agent_executor.invoke({"input": query, "chat_history": self.chat_history, "agent_scratchpad": ""})
+            
+            # Extract the final answer from the result
+            final_answer = result["output"]
+
+            # Store the agent response in chat_history
+            self.update_chat_history("Agent", final_answer)
+
+            # Return the final answer to be displayed
+            return final_answer
+        
+        except Exception as e:
+            error_message = f"An error occurred: {e}"
+            self.update_chat_history("Agent", error_message)
+            return error_message
+
+    def update_chat_history(self, role, message):
+        self.chat_history["conversations"].append({"role": role, "message": message})
+
+agent = Agent()
+result = agent.execute_agent("Qual o objetivo do TechLab Agentes?")
