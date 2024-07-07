@@ -33,7 +33,7 @@ class Agent:
         self.tool_rag = Tool(
             name="rag_tool",
             description="""Retrieve e generate informação do documento pdf com as informações da empresa Tech4Humans e também do TechLab Agentes. Caso o assunto seja abordado no pdf, monte uma resposta final unindo as informações disponíveis, se a informação não for encontrada, responda com uma resposta padrão.
-            Lembre-se de consultar o histórico de conversas para entender se a pergunata e considerar se está é a ferramente""",
+            Lembre-se de consultar o histórico de conversas para entender se a pergunata e considerar se está é a ferramente.""",
             func=self.rag_tool,
         )
 
@@ -41,7 +41,7 @@ class Agent:
             name="create_event",
             description="""Crie um evento no Google Calendar fornecendo os detalhes do evento como resumo, localização, descrição, hora de início, hora de término e fuso horário.
                             Essa função deve ser chamada quando o usuário quiser marcar um evento, como reunião, almoço, etc.
-                            Exemplo a função deve ser chamada: "summary": "Reunião de Marketing", "location": "Sala de Reuniões 1", "description": "Reunião para discutir estratégias de marketing.", "start_time": "2024-07-05T10:00:00", "end_time": "2024-07-05T11:00:00", "timezone": "UTC". 
+                            Exemplo a função deve ser chamada: "summary": "Reunião de Marketing", "location": "Sala de Reuniões 1", "description": "Reunião para discutir estratégias de marketing.", "start_time": "2024-07-05T10:00:00", "end_time": "2024-07-05T11:00:00", "timezone": "America/Sao_Paulo". 
                             Deve-se converter expressões como "amanhã às 7h da manhã" para o formato de data e hora amanha = 2024-06-05 e 7h da manhã = 7:00:00. E depois retornar que o evento foi criado com sucesso. Monte uma resposta final coma informação se o evento foi criado com sucesso ou não.
                             Lembre-se de consultar o histórico de conversas para entender se a pergunata e considerar se está é a ferramente""",
             func=create_event_tool,

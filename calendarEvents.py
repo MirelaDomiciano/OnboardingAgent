@@ -2,7 +2,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
-from datetime import datetime, timedelta
+from datetime import datetime
 import os.path
 import pickle
 
@@ -23,7 +23,7 @@ def get_credentials():
             pickle.dump(creds, token)
     return creds
 
-def create_event(summary, location, description, start_time, end_time, timezone='UTC'):
+def create_event(summary, location, description, start_time, end_time, timezone='America/Sao_Paulo'):
     creds = get_credentials()
     service = build('calendar', 'v3', credentials=creds)
     event = {
@@ -43,10 +43,23 @@ def create_event(summary, location, description, start_time, end_time, timezone=
     return f"Event created: {event.get('htmlLink')}"
 
 def create_event_tool(inputs):
-    summary = inputs.get('summary')
-    location = inputs.get('location')
-    description = inputs.get('description')
-    start_time = datetime.strptime(inputs.get('start_time'), '%Y-%m-%dT%H:%M:%S')
-    end_time = datetime.strptime(inputs.get('end_time'), '%Y-%m-%dT%H:%M:%S')
-    timezone = inputs.get('timezone', 'UTC')
-    return create_event(summary, location, description, start_time, end_time, timezone)
+    if isinstance(inputs, str):
+        import json
+        try:
+            inputs = json.loads(inputs)
+        except json.JSONDecodeError as e:
+            return f"Error decoding input string to dictionary: {str(e)}"
+    
+    if not isinstance(inputs, dict):
+        return "Error: Input should be a dictionary."
+    
+    try:
+        summary = inputs.get('summary')
+        location = inputs.get('location')
+        description = inputs.get('description')
+        start_time = datetime.strptime(inputs.get('start_time'), '%Y-%m-%dT%H:%M:%S')
+        end_time = datetime.strptime(inputs.get('end_time'), '%Y-%m-%dT%H:%M:%S')
+        timezone = inputs.get('timezone', 'UTC')
+        return create_event(summary, location, description, start_time, end_time, timezone)
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
