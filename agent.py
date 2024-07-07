@@ -9,7 +9,7 @@ from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.prompts import PromptTemplate
 from calendarEvents import create_event_tool
@@ -21,7 +21,7 @@ class Agent:
         self.llm = ChatGroq(model="llama3-70b-8192", temperature=0.5)
         self.search = GoogleSearchAPIWrapper()
         self.chat_history = {"conversations": []}
-
+        self.vectorstore = self.initialize_vectorstore()
         self.tool_search = Tool(
             name="google_search",
             description="""Pesquise por tutoriais na web, pesquise em documentações oficiais e responda com o tutorial completo de acesso ou instalação da ferramenta solicitada, o tutorial deve ser passado em tópicos explicando passo a passo o que o usuário deve fazer.
@@ -85,32 +85,48 @@ class Agent:
             {agent_scratchpad}"""
         )
                 
-    def rag_tool(self, query):
-        llm = ChatGroq(model="llama3-8b-8192")
+    def initialize_vectorstore(self):
+        print("Load and process PDF documents...")
+        pdf_files = ["Base.pdf", "TechLab Tech4ai.pdf"]
+        docs = []
 
-        # Load and process PDF document
-        loader_pdf = PyPDFLoader("Base.pdf")
-        docs = loader_pdf.load()
+        for pdf_file in pdf_files:
+            print(f"Loading PDF file: {pdf_file}")
+            loader = PyPDFLoader(pdf_file)
+            docs.extend(loader.load())
+            print(f"Loaded {pdf_file}")
 
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        print("Split the combined documents..")
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=20)
         splits = text_splitter.split_documents(docs)
-        vectorstore = Chroma.from_documents(documents=splits, embedding=HuggingFaceEmbeddings())
 
-        # Retrieve and generate using the relevant snippets of the document
-        retriever = vectorstore.as_retriever()
+        print("Create Vectorstore...")
+        vectorstore = Chroma.from_documents(documents=splits, embedding=HuggingFaceEmbeddings())
+        print("Vectorstore created")
+        return vectorstore
+
+    def format_docs(self, docs):
+        return "\n\n".join(doc.page_content for doc in docs)
+
+    def rag_tool(self, query):
+        print(f"Executing rag_tool with query: {query}")
+
+        llm = ChatGroq(model="llama3-70b-8192")
+        
+        retriever = self.vectorstore.as_retriever()  # Assuming vectorstore is a global variable or accessible
+
         prompt = hub.pull("rlm/rag-prompt")
 
-        def format_docs(docs):
-            return "\n\n".join(doc.page_content for doc in docs)
-
         rag_chain = (
-            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            {"context": retriever | self.format_docs, "question": RunnablePassthrough()}
             | prompt
             | llm
             | StrOutputParser()
         )
 
-        return rag_chain.invoke(query)
+        result = rag_chain.invoke(query)
+        return result
+
 
     def execute_agent(self, query):
         try:
@@ -137,6 +153,3 @@ class Agent:
 
     def update_chat_history(self, role, message):
         self.chat_history["conversations"].append({"role": role, "message": message})
-
-agent = Agent()
-result = agent.execute_agent("Qual o objetivo do TechLab Agentes?")
