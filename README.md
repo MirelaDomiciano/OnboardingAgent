@@ -44,15 +44,13 @@ Este é um assistente virtual desenvolvido para auxiliar no processo de onboardi
         .\venv\Scripts\activate  # Para Windows
     ``` 
 
-## Uso
+## Run
 
-1. **Run**:
-    
-    Abra um terminal na pasta do projeto e rode:
+Abra um terminal na pasta do projeto e rode:
     ```bash
     streamlit run app.py
     ```
-    Isso abrirá uma paginá no seu navegador, a página demora para carregar, pois antes cria o vectorstore que será usado para a ferramenta de rag.
+Isso abrirá uma paginá no seu navegador, a página demora para carregar, pois antes cria o vectorstore que será usado para a ferramenta de rag.
 
 
 
