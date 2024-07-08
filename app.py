@@ -3,13 +3,15 @@ import os
 
 # Inicializa o agente (supondo que você tenha a classe Agent implementada em um módulo separado)
 from agent import Agent
+from agent import initialize_vectorstore
 
 # Configuração da página
 st.set_page_config(page_title="Tech4Humans Onboarding Assistant", layout="centered")
 
 # Armazena a instância do agente na sessão do Streamlit
 if "agent" not in st.session_state:
-    st.session_state.agent = Agent()
+    vectorstore = initialize_vectorstore()
+    st.session_state.agent = Agent(vectorstore=vectorstore)
     print("Agent initialized")
 
 # Armazena as mensagens geradas pelo agente
