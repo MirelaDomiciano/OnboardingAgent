@@ -47,9 +47,10 @@ Este é um assistente virtual desenvolvido para auxiliar no processo de onboardi
 ## Run
 
 Abra um terminal na pasta do projeto e rode:
-    ```bash
+```bash
     streamlit run app.py
-    ```
+```
+    
 Isso abrirá uma paginá no seu navegador, a página demora para carregar, pois antes cria o vectorstore que será usado para a ferramenta de rag.
 
 
